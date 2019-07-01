@@ -123,7 +123,6 @@
     $('#btn_upload_csv').click(function (e) {
         $('#duplicates').empty()
         e.preventDefault()
-        alert('clicked')
         pgrbar.val(0)
         var form_data = new FormData();
         var file = document.getElementById('csv_file').files[0]
@@ -177,7 +176,6 @@
 
                 }
                 else {
-                    console.log('entered here')
                     duplicates = data.duplicates
                     invalid_rows = data.invalid_rows
                     if ((duplicates.length)> 0) {
@@ -350,7 +348,6 @@
 
       $('#btn_upload_json').click(function (e) {
         e.preventDefault()
-        alert('clicked')
         var form_data = new FormData();
         var file = document.getElementById('json_file').files[0]
           if (file){
@@ -386,6 +383,10 @@
 
         })
           }
+
+            else{
+            alert('Please upload a JSON file')
+        }
 
     })
 </script>
