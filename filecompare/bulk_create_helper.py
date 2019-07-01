@@ -6,7 +6,7 @@ class BulkCreateManager(object):
     model classes, and automatically creates those objects with `bulk_create`
     when the number of objects accumulated for a given model class exceeds
     `chunk_size`.
-    Upon completion of the loop that's `add()`ing objects, the developer must
+    Upon completion of the loop that's `add()`ing objects, we must
     call `done()` to ensure the final set of objects is created for all models.
     """
 
