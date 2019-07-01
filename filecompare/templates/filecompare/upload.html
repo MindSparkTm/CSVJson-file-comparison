@@ -1,0 +1,393 @@
+{% include 'base.html' %}
+{% load file_tags_filters %}
+<html>
+<h1>
+    JSON AND CSV File Comparison ToolKit
+</h1>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 ">
+            <div class="form-group">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label id="id_given_name_label" class="control-label col-sm-2" for="id_given_name">
+                        {{ csv_form.file.label_tag }}
+                    </label>
+                    <div class="col-sm-10">
+                        {{ csv_form.file|addclass:'form-control' }}
+                        {{ csv_form.file.errors }}
+                        </br>
+
+                    </div>
+                    <div class="col-sm-2">
+                        <input type="submit" id="btn_upload_csv" class="btn btn-primary"/>
+                    </div>
+                    </br>
+                    <div>
+                        <p>
+                            <progress id="progress-bar" value="0" max="99" style="margin-bottom: 1em;">Uploading
+                                CSV...
+                            </progress>
+                        </p>
+                    </div>
+                    `
+                    <section>
+                        <div class="row">
+                            <div style="overflow-y: scroll;" id="duplicates" class="col-xs-6">
+                            </div>
+                            <div style="overflow-y: scroll;" id="invalid_rows" class="col-xs-6">
+                            </div>
+
+
+                        </div>
+                        <div class="row">
+                        </div>
+                    </section>
+                    `
+                </form>
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+        <div class="col-md-6">
+           <div class="form-group">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label id="id_given_name_label" class="control-label col-sm-2" for="id_given_name">
+                        {{ json_form.file.label_tag }}
+                    </label>
+                    <div class="col-sm-10">
+                        {{ json_form.file|addclass:'form-control' }}
+                        {{ json_form.file.errors }}
+                        </br>
+
+                    </div>
+                    <div class="col-sm-2">
+                        <input type="submit" id="btn_upload_json" class="btn btn-primary"/>
+                    </div>
+                    </br>
+                    <div>
+                        <p>
+                            <progress id="progress-bar-2" value="0" max="99" style="margin-bottom: 1em;">Uploading
+                                JSON...
+                            </progress>
+                        </p>
+                    </div>
+                    `
+                    <section>
+                        <div class="row">
+                            <div style="overflow-y: scroll;" id="duplicates" class="col-xs-6">
+                            </div>
+                            <div style="overflow-y: scroll;" id="invalid_rows" class="col-xs-6">
+                            </div>
+
+
+                        </div>
+                        <div class="row">
+                        </div>
+                    </section>
+                    `
+                </form>
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="container">
+            <div class="col-md-4" id="invalid_json">
+
+            </div>
+            <div class="col-md-4" id="csv_diff_json">
+
+            </div>
+            <div class="col-md-4" id="json_diff_json">
+
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<script type="text/javascript">
+    var pgrbar = $('#progress-bar');
+        var pgrbar2 = $('#progress-bar-2');
+
+
+    $('#btn_upload_csv').click(function (e) {
+        $('#duplicates').empty()
+        e.preventDefault()
+        alert('clicked')
+        pgrbar.val(0)
+        var form_data = new FormData();
+        var file = document.getElementById('csv_file').files[0]
+        if (file){
+           console.log('file', file)
+        form_data.append('file', file)
+
+        e.preventDefault()
+        $.ajax({
+            url: '/file/upload/',
+            type: 'POST',
+            headers: {"X-CSRFToken": '{{csrf_token}}'},
+            data: form_data,
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                console.log('data', data)
+                if (data.result != 'fail') {
+                    duplicates = data.duplicates
+                    invalid_rows = data.invalid_rows
+                    if ((duplicates.length) > 0) {
+                        var str = '<ul>'
+
+                        duplicates.forEach(function (d) {
+                            str = "Already Found payment_reference: " + d.payment_reference + "";
+
+                        });
+                        str += '</ul>';
+                        document.getElementById("duplicates").innerHTML = str;
+
+
+                    }
+
+                    if ((invalid_rows.length) > 0) {
+                        var str = '<ul>'
+
+                        invalid_rows.forEach(function (d) {
+                            str = "Invalid row for Paymentid : " + d.payment_reference + "";
+
+                        });
+                        str += '</ul>';
+                        document.getElementById("invalid_rows").innerHTML = str;
+
+
+                    }
+
+
+                    check_task_status(data.task_id)
+
+
+                }
+                else {
+                    console.log('entered here')
+                    duplicates = data.duplicates
+                    invalid_rows = data.invalid_rows
+                    if ((duplicates.length)> 0) {
+                        var str = '<ul>'
+
+                        duplicates.forEach(function (d) {
+                            str = "Already Found payment_reference: " + d.payment_reference + "";
+
+                        });
+                        str += '</ul>';
+                        document.getElementById("duplicates").innerHTML = str;
+
+
+                    }
+                    if ((invalid_rows.length) > 0) {
+                        var str = '<ul>'
+
+                        invalid_rows.forEach(function (d) {
+                            str = "Invalid row for Paymentid : " + d.payment_reference + "";
+
+                        });
+                        str += '</ul>';
+                        document.getElementById("invalid_rows").innerHTML = str;
+
+
+                    }
+
+
+                }
+
+            },
+
+
+            error: function (err) {
+                console.log('error', err)
+            },
+
+        })
+        }
+
+        else{
+            alert('Please upload a csv file')
+        }
+
+    })
+
+    function check_task_status(task_id) {
+
+
+        $.ajax({
+            url: '/file/task-result/',
+            type: 'POST',
+            data: JSON.stringify({
+
+                "task_id": task_id
+            }),
+            headers: {"X-CSRFToken": '{{csrf_token}}'},
+            dataType: "json",
+            contentType: 'application/json',
+            success: function (data) {
+                percent = (data.result)
+                if (data.state == 'PENDING') {
+                    setTimeout(check_task_status(task_id, 3000))
+
+                }
+
+                if (data.state == 'PROGRESS') {
+                    percent = (data.result.process_percent)
+                    console.log('pec', percent)
+                    percent = parseInt(percent, 10)
+                    console.log(percent)
+                    pgrbar.val(percent);
+
+                    setTimeout(check_task_status(task_id, 3000))
+
+                }
+                if (data.state == 'SUCCESS') {
+                    pgrbar.val(100);
+                }
+            },
+            error: function (err) {
+                console.log('error', err)
+            },
+
+        })
+
+    }
+
+        function check_task_compare_status(task_id,instance_id) {
+
+
+        $.ajax({
+            url: '/file/task-result/',
+            type: 'POST',
+            data: JSON.stringify({
+
+                "task_id": task_id
+            }),
+            headers: {"X-CSRFToken": '{{csrf_token}}'},
+            dataType: "json",
+            contentType: 'application/json',
+            success: function (data) {
+                percent = (data.result)
+
+
+                if (data.state == 'PENDING') {
+                    setTimeout(check_task_compare_status(task_id, instance_id,3000))
+
+                }
+
+                if (data.state == 'PROGRESS') {
+                    percent = (data.result.process_percent)
+                    percent = parseInt(percent, 10)
+                    pgrbar2.val(percent);
+
+                    setTimeout(check_task_compare_status(task_id, instance_id,3000))
+
+                }
+                if (data.state == 'SUCCESS') {
+                    pgrbar2.val(100);
+                    validation_results(instance_id,'payment')
+                }
+            },
+            error: function (err) {
+                console.log('error', err)
+            },
+
+        })
+
+    }
+
+    function validation_results(instance_id,file_type){
+        $('#json_diff_json').empty()
+        $('#csv_diff_json').empty()
+        $('#invalid_json').empty()
+        $.ajax({
+            url: '/file/validation-summary/'+instance_id+'/'+file_type,
+            type: 'GET',
+            success: function (data) {
+                console.log('data',JSON.stringify(data.csv_rows))
+              if (data.csv_rows){
+                  $( "#csv_diff_json" ).append('<div><label style="label-primary">CSV Rows</label></div>');
+                  $('#csv_diff_json').append(data.csv_rows)
+              }
+              else{
+
+              }
+
+              if(data.json_rows){
+                  $( "#json_diff_json" ).append('<div><label style="label-primary">JSON Rows</label></div>');
+                  $('#json_diff_json').append(data.json_rows)
+
+              }
+
+              if(data.invalid_rows){
+                  $( "#invalid_json" ).append('<div><label style="label-primary">Invalid Rows</label></div>');
+                  $('#invalid_json').append(data.invalid_rows)
+
+              }
+
+            },
+
+
+            error: function (err) {
+                console.log('error', err)
+            },
+
+        })
+    }
+
+      $('#btn_upload_json').click(function (e) {
+        e.preventDefault()
+        alert('clicked')
+        var form_data = new FormData();
+        var file = document.getElementById('json_file').files[0]
+          if (file){
+               console.log('file', file)
+        form_data.append('file', file)
+
+        e.preventDefault()
+        $.ajax({
+            url: '/file/upload_json/',
+            type: 'POST',
+            headers: {"X-CSRFToken": '{{csrf_token}}'},
+            data: form_data,
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                console.log('data', data)
+                if(data.status=="success"){
+                    check_task_compare_status(data.task_id,data.instance_id)
+
+                }
+                else{
+                    console.log('failed')
+
+                }
+
+            },
+
+
+            error: function (err) {
+                console.log('error', err)
+            },
+
+        })
+          }
+
+    })
+</script>
+
+</body>
